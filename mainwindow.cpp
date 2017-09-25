@@ -12,3 +12,19 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+
+void MainWindow::on_SelectFileBtn_clicked()
+{
+
+}
+
+void MainWindow::on_StartprocessBtn_clicked()
+{
+
+}
+
+void MainWindow::on_ExitBtn_clicked()
+{
+    exit(EXIT_SUCCESS);
+}
