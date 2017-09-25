@@ -25,13 +25,18 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    imageprocthread.cpp \
+    handpiecimage.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    imageprocthread.h \
+    handpiecimage.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    handpiecimage.ui
 
 INCLUDEPATH += F:/opencvmingw/include
 INCLUDEPATH += F:/opencvmingw/include/opencv

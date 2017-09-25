@@ -5,6 +5,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    m_handpiec = new HandPiecImage();
+    connect(m_handpiec,SIGNAL(send_return_siganl(int)),this,SLOT(accept_return_signal(int)));
 }
 
 MainWindow::~MainWindow()
@@ -26,4 +28,24 @@ void MainWindow::on_StartprocessBtn_clicked()
 void MainWindow::on_ExitBtn_clicked()
 {
     exit(EXIT_SUCCESS);
+}
+
+void MainWindow::on_Hand_Templete_triggered()
+{
+    m_handpiec->show();
+    this->close();
+}
+
+void MainWindow::accept_return_signal(int windowNum)
+{
+    switch(windowNum)
+    {
+    case 1:
+        this->show();
+        m_handpiec->close();
+        break;
+    default:
+        break;
+
+    }
 }
