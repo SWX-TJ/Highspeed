@@ -2,6 +2,7 @@
 #define IMAGEPROCTHREAD_H
 #include <QObject>
 #include <QThread>
+#include <Python.h>
 class ImageProcThread : public QThread
 {
       Q_OBJECT

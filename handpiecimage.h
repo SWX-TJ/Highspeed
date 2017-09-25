@@ -1,6 +1,7 @@
 #ifndef HANDPIECIMAGE_H
 #define HANDPIECIMAGE_H
 #include <QMainWindow>
+#include <Python.h>
 namespace Ui {
 class HandPiecImage;
 }

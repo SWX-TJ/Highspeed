@@ -1,6 +1,5 @@
 #include "handpiecimage.h"
 #include "ui_handpiecimage.h"
-
 HandPiecImage::HandPiecImage(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::HandPiecImage)

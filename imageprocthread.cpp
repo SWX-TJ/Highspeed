@@ -7,5 +7,5 @@ ImageProcThread::ImageProcThread()
 
 void ImageProcThread::run()
 {
-
+Py_Initialize();
 }

@@ -38,24 +38,10 @@ FORMS += \
         mainwindow.ui \
     handpiecimage.ui
 
-INCLUDEPATH += F:/opencvmingw/include
-INCLUDEPATH += F:/opencvmingw/include/opencv
-INCLUDEPATH += F:/opencvmingw/include/opencv2
-DEPENDPATH += F:/opencvmingw/include
+win32: LIBS += -L$$PWD/'../../../../Program Files/Python36/libs/' -lpython36
+INCLUDEPATH += $$PWD/'../../../../Program Files/Python36/libs'
+INCLUDEPATH += $$PWD/'../../../../Program Files/Python36/include'
+DEPENDPATH += $$PWD/'../../../../Program Files/Python36/libs'
 
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_core320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_highgui320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_imgproc320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_calib3d320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_features2d320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_video320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_videoio320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_videostab320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_flann320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_objdetect320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_photo320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_imgcodecs320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_superres320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_shape320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_stitching320.dll
-win32: LIBS += -LF:/opencvmingw/lib/ -llibopencv_ml320.dll
+DISTFILES += \
+    test.py
