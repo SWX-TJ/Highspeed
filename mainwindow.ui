@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Demo</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QLabel" name="OriImage_Disp">
@@ -87,7 +87,7 @@
      <string>模板图像</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="SelectFileBtn">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -100,10 +100,10 @@
      <string>选择文件夹</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="ExitBtn">
     <property name="geometry">
      <rect>
-      <x>260</x>
+      <x>240</x>
       <y>370</y>
       <width>80</width>
       <height>30</height>
@@ -113,7 +113,7 @@
      <string>退出</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_3">
+   <widget class="QPushButton" name="StartprocessBtn">
     <property name="geometry">
      <rect>
       <x>130</x>
