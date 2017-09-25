@@ -87,7 +87,7 @@
    <widget class="QPushButton" name="SaveFileBtn">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>170</x>
       <y>380</y>
       <width>80</width>
       <height>30</height>
@@ -100,7 +100,7 @@
    <widget class="QPushButton" name="ReturnBtn">
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>310</x>
       <y>380</y>
       <width>80</width>
       <height>30</height>
@@ -270,6 +270,19 @@
       <string/>
      </property>
     </widget>
+   </widget>
+   <widget class="QPushButton" name="OpenFlie">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>380</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>打开文件</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

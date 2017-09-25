@@ -6,6 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     m_handpiec = new HandPiecImage();
+    m_ImageThread = new ImageProcThread();
     connect(m_handpiec,SIGNAL(send_return_siganl(int)),this,SLOT(accept_return_signal(int)));
 }
 
@@ -22,7 +23,7 @@ void MainWindow::on_SelectFileBtn_clicked()
 
 void MainWindow::on_StartprocessBtn_clicked()
 {
-
+ m_ImageThread->start();
 }
 
 void MainWindow::on_ExitBtn_clicked()

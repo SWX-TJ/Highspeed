@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 #include <QMainWindow>
 #include "handpiecimage.h"
+#include "imageprocthread.h"
 namespace Ui {
 class MainWindow;
 }
@@ -22,6 +23,7 @@ public slots:
     void accept_return_signal(int);
 public:
     HandPiecImage *m_handpiec;
+    ImageProcThread *m_ImageThread;
 private:
     Ui::MainWindow *ui;
 };
