@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QImage>
+#include <QCoreApplication>
 #include <opencv.hpp>
 #include <iostream>
 #include <maketempletethread.h>
@@ -23,13 +24,18 @@ public:
 public:
     QPoint leftPoint;
     QPoint rightPoint;
+    QPoint leftFnishPoint;
+    QPoint rightFnishPoint;
     Mat    OriImage;
     QImage DispImage;
+      Mat TempleteImage;
     QImage tempDispImage;
+     QPixmap pixmap;
     QString   File_INFO;
     QString   File_path;
     QString   File_name;
     QFileInfo File_info;
+    int TempleteImageNum;
 public:
      QImage convertMatToQImage(Mat &mat);
      Mat   convertQImageToMat(QImage &image);
@@ -41,15 +47,20 @@ public:
 private slots:
     void on_ReturnBtn_clicked();
     void on_OpenFlie_clicked();
+    void on_SaveFileBtn_clicked();
+
 public slots:
     void accept_QImage(QImage);
 signals:
-    void send_LeftImageInfo(QPoint,QImage);
-    void send_RightImageInfo(QPoint,QImage);
+    void send_LeftImageInfo(QPoint,QString);
+    void send_RightImageInfo(QPoint,QString);
+    void send_LeftAndRightImageInfo(QPoint,QPoint,QString);
     void send_return_siganl(int);
 public:
     bool isLeftPoint;
     bool isRightPoint;
+    bool isLeftPointFinish;
+    bool isRightPointFinish;
 private:
     Ui::HandPiecImage *ui;
 };
