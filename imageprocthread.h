@@ -3,6 +3,10 @@
 #include <QObject>
 #include <QThread>
 #include <opencv.hpp>
+#include <QFileInfo>
+#include <QCoreApplication>
+#include <QDir>
+#include <QMessageBox>
 using namespace cv;
 class ImageProcThread : public QThread
 {
@@ -12,6 +16,19 @@ public:
 public:
     Mat OriImage;
     Mat TempImage;
+    Mat resultImage;
+    std::vector<Mat> tempImages;//模板图片
+    QString MatchImageFilePath;
+    QList<QFileInfo> *MatchImageFileInfo;
+    QList<QFileInfo> *TempleteImageFileInfo;
+    int TempleteImageNum;
+    int MatchImageNum;
+    bool isTempleteImage;
+public slots:
+    void accept_MatchFileInfo(QString);
+public:
+    void load_templeteImage();
+    Mat ImageProcess(Mat &oriImage);
 protected:
      void run();
 };

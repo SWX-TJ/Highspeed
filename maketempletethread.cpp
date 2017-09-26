@@ -1,7 +1,6 @@
 #include "maketempletethread.h"
 MakeTempleteThread::MakeTempleteThread()
 {
-
     isdrawleft = false;
     isdrawright  = false;
     isdrawAll = false;

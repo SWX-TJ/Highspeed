@@ -1,8 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QMainWindow>
+#include <opencv.hpp>
+#include <QFileDialog>
+#include <QDir>
+#include <QFileInfo>
+#include <QList>
 #include "handpiecimage.h"
 #include "imageprocthread.h"
+using namespace cv;
 namespace Ui {
 class MainWindow;
 }
@@ -21,9 +27,15 @@ private slots:
     void on_Hand_Templete_triggered();
 public slots:
     void accept_return_signal(int);
+signals:
+    void send_MatchImageFileInfo(QString);
 public:
     HandPiecImage *m_handpiec;
     ImageProcThread *m_ImageThread;
+    QString MatchImageFilePath;
+    QList<QFileInfo> *MatchImageFileInfo;
+    int MatchImageNum;
+    bool isStartBtnCliked;
 private:
     Ui::MainWindow *ui;
 };
