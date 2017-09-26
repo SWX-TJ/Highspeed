@@ -176,4 +176,5 @@ void HandPiecImage::on_SaveFileBtn_clicked()
     tempDispImage = convertMatToQImage(TempleteImage);
     pixmap =  QPixmap::fromImage(tempDispImage);
     ui->TempleteImage->setPixmap(pixmap);
+    new_templeteFile(1);
 }

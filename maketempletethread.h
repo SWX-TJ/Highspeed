@@ -28,7 +28,6 @@ public slots:
     void accept_leftargImage(QPoint,QString);
     void accept_rightargImage(QPoint,QString);
     void accept_leftAndRightImage(QPoint,QPoint,QString);
-    //Mat func(int left_x,int left_y,int right_x,int right_y,Mat &OriImage);
 protected:
     void run();
 };

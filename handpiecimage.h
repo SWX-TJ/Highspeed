@@ -56,6 +56,7 @@ signals:
     void send_RightImageInfo(QPoint,QString);
     void send_LeftAndRightImageInfo(QPoint,QPoint,QString);
     void send_return_siganl(int);
+    void new_templeteFile(int);
 public:
     bool isLeftPoint;
     bool isRightPoint;

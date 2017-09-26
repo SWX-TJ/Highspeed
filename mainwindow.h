@@ -27,8 +27,10 @@ private slots:
     void on_Hand_Templete_triggered();
 public slots:
     void accept_return_signal(int);
+    void accept_newtempleteFile(int);
 signals:
     void send_MatchImageFileInfo(QString);
+    void send_istempsignals(int);
 public:
     HandPiecImage *m_handpiec;
     ImageProcThread *m_ImageThread;

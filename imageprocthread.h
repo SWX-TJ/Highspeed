@@ -26,6 +26,7 @@ public:
     bool isTempleteImage;
 public slots:
     void accept_MatchFileInfo(QString);
+    void accept_isTempleteFile(int);
 public:
     void load_templeteImage();
     Mat ImageProcess(Mat &oriImage);

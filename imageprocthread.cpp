@@ -12,6 +12,14 @@ void ImageProcThread::accept_MatchFileInfo(QString filepath)
     MatchImageFilePath = filepath;
 }
 
+void ImageProcThread::accept_isTempleteFile(int tem)
+{
+    if(tem ==1)
+    {
+        isTempleteImage = true;
+    }
+}
+
 void ImageProcThread::load_templeteImage()
 {
     QString templeteImagepath = QCoreApplication::applicationDirPath()+QString("/templete");
@@ -66,6 +74,7 @@ void ImageProcThread::run()
     {
     if(isTempleteImage)
     {
+       load_templeteImage();
         isTempleteImage = false;
         QDir *dir = new QDir(MatchImageFilePath);
         QStringList filter;

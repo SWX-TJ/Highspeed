@@ -6,11 +6,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-   isStartBtnCliked = false;
+    isStartBtnCliked = false;
     m_handpiec = new HandPiecImage();
     m_ImageThread = new ImageProcThread();
     connect(m_handpiec,SIGNAL(send_return_siganl(int)),this,SLOT(accept_return_signal(int)));
     connect(this,SIGNAL(send_MatchImageFileInfo(QString)),m_ImageThread,SLOT(accept_MatchFileInfo(QString)));
+    connect(this,SIGNAL(send_istempsignals(int)),m_ImageThread,SLOT(accept_isTempleteFile(int)));
+    connect(m_handpiec,SIGNAL(new_templeteFile(int)),this,SLOT(accept_newtempleteFile(int)));
 }
 
 MainWindow::~MainWindow()
@@ -62,5 +64,13 @@ void MainWindow::accept_return_signal(int windowNum)
     default:
         break;
 
+    }
+}
+
+void MainWindow::accept_newtempleteFile(int tem)
+{
+    if(tem ==1)
+    {
+        send_istempsignals(1);
     }
 }
