@@ -171,7 +171,9 @@ void HandPiecImage::on_SaveFileBtn_clicked()
     QString tempfilePath = QCoreApplication::applicationDirPath().replace('/',"\\");
     QString tempfileName = QString("\\templete\\temImage (%1).bmp").arg(TempleteImageNum);
     std::string savetempfile = (tempfilePath+tempfileName).toStdString();
-    imwrite(savetempfile,TempleteImage);
+    Mat grayTempleteImage;
+    cvtColor(TempleteImage,grayTempleteImage,COLOR_BGR2GRAY);
+    imwrite(savetempfile,grayTempleteImage);
     TempleteImageNum++;
     tempDispImage = convertMatToQImage(TempleteImage);
     pixmap =  QPixmap::fromImage(tempDispImage);

@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(send_MatchImageFileInfo(QString)),m_ImageThread,SLOT(accept_MatchFileInfo(QString)));
     connect(this,SIGNAL(send_istempsignals(int)),m_ImageThread,SLOT(accept_isTempleteFile(int)));
     connect(m_handpiec,SIGNAL(new_templeteFile(int)),this,SLOT(accept_newtempleteFile(int)));
+    connect(m_ImageThread,SIGNAL(send_dispImage(QImage)),this,SLOT(accept_dispImage(QImage)));
 }
 
 MainWindow::~MainWindow()
@@ -38,7 +39,7 @@ void MainWindow::on_StartprocessBtn_clicked()
     else
     {
         ui->StartprocessBtn->setText("开始");
-        m_ImageThread->quit();
+        m_ImageThread->terminate();
     }
 }
 
@@ -73,4 +74,42 @@ void MainWindow::accept_newtempleteFile(int tem)
     {
         send_istempsignals(1);
     }
+}
+
+void MainWindow::accept_dispImage(QImage resuImage)
+{
+    ui->OriImage_Disp->setPixmap(QPixmap::fromImage(resuImage));
+}
+
+void MainWindow::accept_sendTime(int time)
+{
+
+}
+
+void MainWindow::accept_ishaveGj(bool isgj)
+{
+    ishaveGj = isgj;
+    if(ishaveGj)
+    {
+        ui->gong_is->setText(QString(tr("有")));
+    }
+    else
+    {
+         ui->gong_is->setText(QString(tr("无")));
+    }
+}
+
+void MainWindow::accept_jcpoint(Point)
+{
+
+}
+
+void MainWindow::accept_templeteImage(QImage dispTempImage)
+{
+    ui->TempImage_Disp->setPixmap(QPixmap::fromImage(dispTempImage));
+}
+
+void MainWindow::accept_lineNum(int)
+{
+
 }

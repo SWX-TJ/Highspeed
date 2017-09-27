@@ -4,6 +4,7 @@
 ImageProcThread::ImageProcThread()
 {
     isTempleteImage = false;
+    isLoadTempleteImage = false;
     load_templeteImage();
 }
 
@@ -31,6 +32,7 @@ void ImageProcThread::load_templeteImage()
     {
         QMessageBox::information(NULL,"Erroe","there is no TempleteImage!");
         isTempleteImage = false;
+        isLoadTempleteImage = false;
     }
     else
     {
@@ -43,53 +45,100 @@ void ImageProcThread::load_templeteImage()
             TempImage = imread(stdmatchfilename);
             tempImages.push_back(TempImage);
         }
+        isLoadTempleteImage = true;
     }
 }
 
 Mat ImageProcThread::ImageProcess(Mat &oriImage)
 {
-    Mat procImage = oriImage.clone();
-    for(int i = 0;i<tempImages.size();i++)
+        Mat procImage = oriImage.clone();
+        Mat grayImage;
+        grayImage = procImage.clone();
+    for(size_t i = 0;i<tempImages.size();i++)
     {
         Mat useTempImage = tempImages.at(i);
-        int resultImage_cols = procImage.cols-useTempImage.cols+1;
-        int resultImage_rows = procImage.rows-useTempImage.rows+1;
+        dispTempImage = convertMatToQImage(useTempImage);
+        send_templeteImage(dispTempImage);
+        int resultImage_cols = grayImage.cols-useTempImage.cols+1;
+        int resultImage_rows = grayImage.rows-useTempImage.rows+1;
         resultImage.create(resultImage_rows,resultImage_cols,CV_32FC1);
-        matchTemplate(procImage,useTempImage,resultImage,CV_TM_CCOEFF_NORMED);
+        matchTemplate(grayImage,useTempImage,resultImage,CV_TM_CCOEFF_NORMED);
         normalize(resultImage,resultImage,0,1,NORM_MINMAX,-1,Mat());
-        double minValue,maxValue;
-        Point minLocation;
-        Point maxLocation;
-        Point matchLocation;
         minMaxLoc(resultImage,&minValue,&maxValue,&minLocation,&maxLocation,Mat());
         matchLocation = maxLocation;
-        rectangle(procImage,matchLocation,Point(matchLocation.x+useTempImage.cols,matchLocation.y+useTempImage.rows),Scalar(0,0,255),2,8,0);
+        Rect matchrect = Rect(matchLocation,Point(matchLocation.x+useTempImage.cols,matchLocation.y+useTempImage.rows));
+        MatchRects.push_back(matchrect);
+    }
+    if(MatchRects.size())
+    {
+        Rect tempRect = MatchRects.at(0);
+        minMatchArea =tempRect.area();
+        for(size_t j = 0;j<MatchRects.size();j++)
+        {
+            Rect matchs = MatchRects.at(j);
+            if(matchs.area()<minMatchArea)
+            {
+                minMatchArea = matchs.area();
+            }
+        }
+        for(size_t k = 0;k<MatchRects.size();k++)
+        {
+            Rect drawrect = MatchRects.at(k);
+            if(drawrect.area() == minMatchArea)
+            {
+                rectangle(procImage,drawrect,Scalar(0,0,255),2,8,0);
+                break;
+            }
+        }
     }
     return procImage;
+}
+
+QImage ImageProcThread::convertMatToQImage(Mat &mat)
+{
+    QImage img;
+    int nChannel=mat.channels();
+    if(nChannel==3)
+    {
+        cvtColor(mat,mat,CV_BGR2RGB);
+        img = QImage((const unsigned char*)mat.data,mat.cols,mat.rows,QImage::Format_RGB888);
+    }
+    if(nChannel==4)
+    {
+        img = QImage((const unsigned char*)mat.data,mat.cols,mat.rows,QImage::Format_ARGB32);
+    }
+    if(nChannel==1)
+    {
+        img = QImage((const unsigned char*)mat.data,mat.cols,mat.rows,QImage::Format_Indexed8);
+    }
+    return img;
 }
 
 void ImageProcThread::run()
 {
     while(1)
     {
-    if(isTempleteImage)
-    {
-       load_templeteImage();
-        isTempleteImage = false;
-        QDir *dir = new QDir(MatchImageFilePath);
-        QStringList filter;
-        MatchImageFileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));
-        MatchImageNum = MatchImageFileInfo->count();
-        int i;
-        for(i = 2;i<MatchImageNum;i++)
+        if(isTempleteImage)
         {
-            QString filepath =  MatchImageFileInfo->at(i).filePath().replace('/',"\\");
-            std::string stdmatchfilename = filepath.toStdString();
-            OriImage = imread(stdmatchfilename);
-            Mat resuImage = ImageProcess(OriImage);
-        imshow("match",resuImage);
-        waitKey(100);
+            load_templeteImage();
+            isTempleteImage = false;
         }
-    }
+        if(isLoadTempleteImage)
+        {
+            QDir *dir = new QDir(MatchImageFilePath);
+            QStringList filter;
+            MatchImageFileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));
+            MatchImageNum = MatchImageFileInfo->count();
+            int i;
+            for(i = 2;i<MatchImageNum;i++)
+            {
+                QString filepath =  MatchImageFileInfo->at(i).filePath().replace('/',"\\");
+                std::string stdmatchfilename = filepath.toStdString();
+                OriImage = imread(stdmatchfilename);
+                resuImage = ImageProcess(OriImage);
+                dispImage = convertMatToQImage(resuImage);
+                send_dispImage(dispImage);
+            }
+        }
     }
 }

@@ -28,6 +28,17 @@ private slots:
 public slots:
     void accept_return_signal(int);
     void accept_newtempleteFile(int);
+    void accept_dispImage(QImage);
+    void accept_sendTime(int);
+    void accept_ishaveGj(bool);
+    void accept_jcpoint(Point);
+    void accept_templeteImage(QImage);
+    void accept_lineNum(int);
+public:
+    Point jcpoint;
+    int LineNum;
+    int time;
+    bool ishaveGj;
 signals:
     void send_MatchImageFileInfo(QString);
     void send_istempsignals(int);
