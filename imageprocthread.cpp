@@ -51,13 +51,14 @@ void ImageProcThread::load_templeteImage()
 Mat ImageProcThread::ImageProcess(Mat &oriImage)
 {
     Mat procImage = oriImage.clone();
+    Mat grayImage;
+       double tim0 = static_cast<double>(getTickCount());
     for(size_t i = 0;i<tempImages.size();i++)
     {
         Mat useTempImage = tempImages.at(i);
         dispTempImage = convertMatToQImage(useTempImage);
         send_templeteImage(dispTempImage);
-        double tim0 = static_cast<double>(getTickCount());
-        Mat grayImage;
+
         cvtColor(procImage,grayImage,COLOR_BGR2GRAY);
         Mat grayTempImage;
         cvtColor(useTempImage,grayTempImage,COLOR_BGR2GRAY);
@@ -67,11 +68,6 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
         minMaxLoc(grayresultImage,&minValue,&maxValue,&minLocation,&maxLocation,Mat());
         matchLocation = maxLocation;
         Rect matchrect = Rect(matchLocation,Point(matchLocation.x+useTempImage.cols,matchLocation.y+useTempImage.rows));
-        tim0 = (static_cast<double>(getTickCount()) - tim0) / getTickFrequency();
-        QString Danwei = QString("ms");
-        QString send_time = SpendTime.setNum(tim0*1000)+Danwei;
-        send_sendTime(send_time);
-
         MatchRects.push_back(matchrect);
     }
     if(MatchRects.size())
@@ -91,12 +87,20 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
             Rect tempRects = MatchRects.at(k);
             if(tempRects.area() == minRectArea)
             {
-                rectangle(procImage,tempRects,Scalar(0,0,255),2,8,0);
+                Mat tempImage = tempImages.at(k);
+                Mat grayTempImage;
+                cvtColor(tempImage,grayTempImage,COLOR_BGR2GRAY);
+                procImage = newLineDetect(grayImage, grayTempImage,tempRects);
+                rectangle(procImage,tempRects,Scalar(0,255,0),2,8,0);
                 break;
             }
         }
     }
-return procImage;
+    tim0 = (static_cast<double>(getTickCount()) - tim0) / getTickFrequency();
+    QString Danwei = QString("ms");
+    QString send_time = SpendTime.setNum(tim0*1000)+Danwei;
+    send_sendTime(send_time);
+    return procImage;
 }
 QImage ImageProcThread::convertMatToQImage(Mat &mat)
 {
@@ -116,6 +120,69 @@ QImage ImageProcThread::convertMatToQImage(Mat &mat)
         img = QImage((const unsigned char*)mat.data,mat.cols,mat.rows,QImage::Format_Indexed8);
     }
     return img;
+}
+
+Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect)
+{
+    Mat procImage = grayImage.clone();
+    Ptr<LineSegmentDetector> lsd = createLineSegmentDetector(LSD_REFINE_STD);
+    std::vector<Vec4f> vecLines;
+    std::vector<Vec4f> select_vecLines;
+    lsd->detect(tempImage,vecLines);
+    for(size_t  i = 0;i<vecLines.size();i++)
+    {
+        float k ;
+        Vec4f sline = vecLines.at(i);
+        if((sline[2]-sline[0])!= 0)
+            k = (sline[3]-sline[1])/(sline[2]-sline[0]);
+        else
+            k = 0;
+        if(k<0.02&&k>(-0.02))
+        {
+            sline[0] = sline[0]+RoiRect.x;
+            sline[1] = sline[1]+RoiRect.y;
+            sline[2] = sline[2]+RoiRect.x;
+            sline[3] = sline[3]+RoiRect.y;
+            line_k.push_back(k);
+            line(procImage,Point(sline[0],sline[1]),Point(sline[2],sline[3]),Scalar(0,0,255),3,8,0);
+            select_vecLines.push_back(sline);
+        }
+    }
+    //lsd->drawSegments(procImage,select_vecLines);
+    return procImage;
+}
+
+Mat ImageProcThread::LineDetect(Mat &grayImage,Mat &rOiImage,Rect &ROIRect)
+{
+    Mat procImage = grayImage.clone();
+    rOiImage = procImage(ROIRect);
+    Mat binRoiImage;
+    threshold(rOiImage,binRoiImage,0,255,THRESH_OTSU);
+    Ptr<LineSegmentDetector> lsd = createLineSegmentDetector(LSD_REFINE_STD);
+    std::vector<Vec4f> vecLines;
+    std::vector<Vec4f> select_vecLines;
+    lsd->detect( binRoiImage,vecLines);
+    for(size_t  i = 0;i<vecLines.size();i++)
+    {
+        float k ;
+        Vec4f sline = vecLines.at(i);
+        if((sline[2]-sline[0])!= 0)
+            k = (sline[3]-sline[1])/(sline[2]-sline[0]);
+        else
+            k = 0;
+        if(k<0.02&&k>(-0.02))
+        {
+            sline[0] = sline[0]+ROIRect.x;
+            sline[1] = sline[1]+ROIRect.y;
+            sline[2] = sline[2]+ROIRect.x;
+            sline[3] = sline[3]+ROIRect.y;
+            line_k.push_back(k);
+            line(procImage,Point(sline[0],sline[1]),Point(sline[2],sline[3]),Scalar(0,0,255),3,8,0);
+            select_vecLines.push_back(sline);
+        }
+    }
+    //lsd->drawSegments(procImage,select_vecLines);
+    return procImage;
 }
 void ImageProcThread::run()
 {

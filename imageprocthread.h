@@ -21,12 +21,14 @@ public:
     QImage dispTempImage;
     QImage dispImage;
     Mat resuImage;
+    Mat RoiImage;
     double minValue,maxValue;
     Point minLocation;
     Point maxLocation;
     Point matchLocation;
     std::vector<Mat> tempImages;//模板图片
     std::vector<Rect> MatchRects;
+    std::vector<float>line_k;
     QString MatchImageFilePath;
     QList<QFileInfo> *MatchImageFileInfo;
     QList<QFileInfo> *TempleteImageFileInfo;
@@ -50,6 +52,8 @@ public:
     void load_templeteImage();
     Mat ImageProcess(Mat &oriImage);
     QImage convertMatToQImage(Mat &mat);
+    Mat newLineDetect(Mat &grayImage,Mat &tempImage,Rect &RoiRect);
+    Mat LineDetect(Mat &grayImage,Mat &rOiImage,Rect &ROIRect);
 protected:
     void run();
 };
