@@ -7,7 +7,6 @@ ImageProcThread::ImageProcThread()
     isLoadTempleteImage = false;
     load_templeteImage();
 }
-
 void ImageProcThread::accept_MatchFileInfo(QString filepath)
 {
     MatchImageFilePath = filepath;
@@ -51,49 +50,54 @@ void ImageProcThread::load_templeteImage()
 
 Mat ImageProcThread::ImageProcess(Mat &oriImage)
 {
-        Mat procImage = oriImage.clone();
-        Mat grayImage;
-        grayImage = procImage.clone();
+    Mat procImage = oriImage.clone();
     for(size_t i = 0;i<tempImages.size();i++)
     {
         Mat useTempImage = tempImages.at(i);
         dispTempImage = convertMatToQImage(useTempImage);
         send_templeteImage(dispTempImage);
-        int resultImage_cols = grayImage.cols-useTempImage.cols+1;
-        int resultImage_rows = grayImage.rows-useTempImage.rows+1;
-        resultImage.create(resultImage_rows,resultImage_cols,CV_32FC1);
-        matchTemplate(grayImage,useTempImage,resultImage,CV_TM_CCOEFF_NORMED);
-        normalize(resultImage,resultImage,0,1,NORM_MINMAX,-1,Mat());
-        minMaxLoc(resultImage,&minValue,&maxValue,&minLocation,&maxLocation,Mat());
+        double tim0 = static_cast<double>(getTickCount());
+        Mat grayImage;
+        cvtColor(procImage,grayImage,COLOR_BGR2GRAY);
+        Mat grayTempImage;
+        cvtColor(useTempImage,grayTempImage,COLOR_BGR2GRAY);
+        Mat grayresultImage;
+        matchTemplate(grayImage,grayTempImage,grayresultImage,CV_TM_CCOEFF);
+        normalize(grayresultImage,grayresultImage,0,1,NORM_MINMAX,-1,Mat());
+        minMaxLoc(grayresultImage,&minValue,&maxValue,&minLocation,&maxLocation,Mat());
         matchLocation = maxLocation;
         Rect matchrect = Rect(matchLocation,Point(matchLocation.x+useTempImage.cols,matchLocation.y+useTempImage.rows));
+        tim0 = (static_cast<double>(getTickCount()) - tim0) / getTickFrequency();
+        QString Danwei = QString("ms");
+        QString send_time = SpendTime.setNum(tim0*1000)+Danwei;
+        send_sendTime(send_time);
+
         MatchRects.push_back(matchrect);
     }
     if(MatchRects.size())
     {
-        Rect tempRect = MatchRects.at(0);
-        minMatchArea =tempRect.area();
+        Rect minRect = MatchRects.at(0);
+        int minRectArea = minRect.area();
         for(size_t j = 0;j<MatchRects.size();j++)
         {
-            Rect matchs = MatchRects.at(j);
-            if(matchs.area()<minMatchArea)
+            Rect tempRect = MatchRects.at(j);
+            if(tempRect.area()<minRectArea)
             {
-                minMatchArea = matchs.area();
+                minRectArea = tempRect.area();
             }
         }
         for(size_t k = 0;k<MatchRects.size();k++)
         {
-            Rect drawrect = MatchRects.at(k);
-            if(drawrect.area() == minMatchArea)
+            Rect tempRects = MatchRects.at(k);
+            if(tempRects.area() == minRectArea)
             {
-                rectangle(procImage,drawrect,Scalar(0,0,255),2,8,0);
+                rectangle(procImage,tempRects,Scalar(0,0,255),2,8,0);
                 break;
             }
         }
     }
-    return procImage;
+return procImage;
 }
-
 QImage ImageProcThread::convertMatToQImage(Mat &mat)
 {
     QImage img;
@@ -113,7 +117,6 @@ QImage ImageProcThread::convertMatToQImage(Mat &mat)
     }
     return img;
 }
-
 void ImageProcThread::run()
 {
     while(1)

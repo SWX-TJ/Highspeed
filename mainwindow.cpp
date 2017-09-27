@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(send_istempsignals(int)),m_ImageThread,SLOT(accept_isTempleteFile(int)));
     connect(m_handpiec,SIGNAL(new_templeteFile(int)),this,SLOT(accept_newtempleteFile(int)));
     connect(m_ImageThread,SIGNAL(send_dispImage(QImage)),this,SLOT(accept_dispImage(QImage)));
+    connect(m_ImageThread,SIGNAL(send_templeteImage(QImage)),this,SLOT(accept_templeteImage(QImage)));
+    connect(m_ImageThread,SIGNAL(send_sendTime(QString)),this,SLOT(accept_sendTime(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -81,9 +83,9 @@ void MainWindow::accept_dispImage(QImage resuImage)
     ui->OriImage_Disp->setPixmap(QPixmap::fromImage(resuImage));
 }
 
-void MainWindow::accept_sendTime(int time)
+void MainWindow::accept_sendTime(QString spendtime)
 {
-
+  ui->process_time->setText(spendtime);
 }
 
 void MainWindow::accept_ishaveGj(bool isgj)
@@ -99,17 +101,28 @@ void MainWindow::accept_ishaveGj(bool isgj)
     }
 }
 
-void MainWindow::accept_jcpoint(Point)
-{
-
-}
-
 void MainWindow::accept_templeteImage(QImage dispTempImage)
 {
     ui->TempImage_Disp->setPixmap(QPixmap::fromImage(dispTempImage));
 }
 
-void MainWindow::accept_lineNum(int)
+void MainWindow::send_singleLineInfo(Point pt1)
+{
+    jcpoint_1 = pt1;
+    QString temp_x,temp_y;
+    ui->pt1_x_aix->setText(temp_x.setNum(jcpoint_1.x));
+    ui->pt1_y_aix->setText(temp_y.setNum(jcpoint_1.y));
+}
+
+void MainWindow::send_secondLineInof(Point pt1, Point pt2)
 {
 
+    jcpoint_1 = pt1;
+    QString temp_x,temp_y;
+    ui->pt1_x_aix->setText(temp_x.setNum(jcpoint_1.x));
+    ui->pt1_y_aix->setText(temp_y.setNum(jcpoint_1.y));
+    jcpoint_2 = pt2;
+    QString temp_2_x,temp_2_y;
+    ui->pt2_x_aix->setText(temp_2_x.setNum( jcpoint_2.x));
+    ui->pt2_y_aix->setText(temp_2_y.setNum( jcpoint_2.y));
 }

@@ -29,14 +29,14 @@ public slots:
     void accept_return_signal(int);
     void accept_newtempleteFile(int);
     void accept_dispImage(QImage);
-    void accept_sendTime(int);
+    void accept_sendTime(QString);
     void accept_ishaveGj(bool);
-    void accept_jcpoint(Point);
     void accept_templeteImage(QImage);
-    void accept_lineNum(int);
+    void send_singleLineInfo(Point);
+    void send_secondLineInof(Point,Point);
 public:
-    Point jcpoint;
-    int LineNum;
+    Point jcpoint_1;
+    Point jcpoint_2;
     int time;
     bool ishaveGj;
 signals:
