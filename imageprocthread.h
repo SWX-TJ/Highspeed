@@ -21,7 +21,6 @@ public:
     QImage dispTempImage;
     QImage dispImage;
     Mat resuImage;
-    Mat RoiImage;
     double minValue,maxValue;
     Point minLocation;
     Point maxLocation;
@@ -52,8 +51,8 @@ public:
     void load_templeteImage();
     Mat ImageProcess(Mat &oriImage);
     QImage convertMatToQImage(Mat &mat);
+    Mat RoiImageProcess(Mat &RoiImage,Rect &RoiRect);
     Mat newLineDetect(Mat &grayImage,Mat &tempImage,Rect &RoiRect);
-    Mat LineDetect(Mat &grayImage,Mat &rOiImage,Rect &ROIRect);
 protected:
     void run();
 };

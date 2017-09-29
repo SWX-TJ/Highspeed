@@ -66,6 +66,7 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
         matchTemplate(grayImage,grayTempImage,grayresultImage,CV_TM_CCOEFF);
         normalize(grayresultImage,grayresultImage,0,1,NORM_MINMAX,-1,Mat());
         minMaxLoc(grayresultImage,&minValue,&maxValue,&minLocation,&maxLocation,Mat());
+       qDebug()<<"Match maxvalue"<<maxValue<<endl;
         matchLocation = maxLocation;
         Rect matchrect = Rect(matchLocation,Point(matchLocation.x+useTempImage.cols,matchLocation.y+useTempImage.rows));
         MatchRects.push_back(matchrect);
@@ -82,6 +83,10 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
                 minRectArea = tempRect.area();
             }
         }
+        tim0 = (static_cast<double>(getTickCount()) - tim0) / getTickFrequency();
+        QString Danwei = QString("ms");
+        QString send_time = SpendTime.setNum(tim0*1000)+Danwei;
+        send_sendTime(send_time);
         for(size_t k = 0;k<MatchRects.size();k++)
         {
             Rect tempRects = MatchRects.at(k);
@@ -90,16 +95,14 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
                 Mat tempImage = tempImages.at(k);
                 Mat grayTempImage;
                 cvtColor(tempImage,grayTempImage,COLOR_BGR2GRAY);
-                procImage = newLineDetect(grayImage, grayTempImage,tempRects);
+                Mat ssImage = RoiImageProcess(procImage,tempRects);
+                Mat  sprocImage = newLineDetect(grayImage, ssImage,tempRects);
                 rectangle(procImage,tempRects,Scalar(0,255,0),2,8,0);
                 break;
             }
         }
     }
-    tim0 = (static_cast<double>(getTickCount()) - tim0) / getTickFrequency();
-    QString Danwei = QString("ms");
-    QString send_time = SpendTime.setNum(tim0*1000)+Danwei;
-    send_sendTime(send_time);
+
     return procImage;
 }
 QImage ImageProcThread::convertMatToQImage(Mat &mat)
@@ -122,6 +125,28 @@ QImage ImageProcThread::convertMatToQImage(Mat &mat)
     return img;
 }
 
+Mat ImageProcThread::RoiImageProcess(Mat &RoiImage,Rect &RoiRect)
+{
+    Mat procImage =RoiImage(RoiRect);
+    Mat grayprocImage;
+    cvtColor( procImage,grayprocImage,COLOR_BGR2GRAY);
+    Mat sobel_x;
+    Sobel(grayprocImage,sobel_x,grayprocImage.depth(),1,0,3);
+    Mat abs_sobel_x;
+    convertScaleAbs(sobel_x,abs_sobel_x);
+    Mat sobel_y;
+    Sobel(grayprocImage, sobel_y, grayprocImage.depth(), 0, 1, 3);
+    Mat abs_sobel_y;
+    convertScaleAbs(sobel_y, abs_sobel_y);
+    Mat sobelImage;
+    addWeighted(abs_sobel_x,1,abs_sobel_y,1,0,sobelImage);
+    Mat binsobelImage;
+    threshold(sobelImage, binsobelImage,0, 255, THRESH_OTSU);
+    imshow("ostuRoiImage",binsobelImage);
+    waitKey(100);
+    return binsobelImage;
+}
+
 Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect)
 {
     Mat procImage = grayImage.clone();
@@ -129,6 +154,8 @@ Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect
     std::vector<Vec4f> vecLines;
     std::vector<Vec4f> select_vecLines;
     lsd->detect(tempImage,vecLines);
+    if(vecLines.size()!=0)
+        send_ishaveGj(true);
     for(size_t  i = 0;i<vecLines.size();i++)
     {
         float k ;
@@ -137,53 +164,29 @@ Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect
             k = (sline[3]-sline[1])/(sline[2]-sline[0]);
         else
             k = 0;
-        if(k<0.02&&k>(-0.02))
+        if(k<0.04&&k>(-0.04))
         {
+
             sline[0] = sline[0]+RoiRect.x;
             sline[1] = sline[1]+RoiRect.y;
             sline[2] = sline[2]+RoiRect.x;
             sline[3] = sline[3]+RoiRect.y;
             line_k.push_back(k);
-            line(procImage,Point(sline[0],sline[1]),Point(sline[2],sline[3]),Scalar(0,0,255),3,8,0);
+            //line(procImage,Point(sline[0],sline[1]),Point(sline[2],sline[3]),Scalar(0,0,255),3,8,0);
             select_vecLines.push_back(sline);
         }
     }
+    for(size_t l = 0;l<select_vecLines.size();l++)
+    {
+
+    }
+    imshow("lineImage",procImage);
+    waitKey(30);
     //lsd->drawSegments(procImage,select_vecLines);
     return procImage;
 }
 
-Mat ImageProcThread::LineDetect(Mat &grayImage,Mat &rOiImage,Rect &ROIRect)
-{
-    Mat procImage = grayImage.clone();
-    rOiImage = procImage(ROIRect);
-    Mat binRoiImage;
-    threshold(rOiImage,binRoiImage,0,255,THRESH_OTSU);
-    Ptr<LineSegmentDetector> lsd = createLineSegmentDetector(LSD_REFINE_STD);
-    std::vector<Vec4f> vecLines;
-    std::vector<Vec4f> select_vecLines;
-    lsd->detect( binRoiImage,vecLines);
-    for(size_t  i = 0;i<vecLines.size();i++)
-    {
-        float k ;
-        Vec4f sline = vecLines.at(i);
-        if((sline[2]-sline[0])!= 0)
-            k = (sline[3]-sline[1])/(sline[2]-sline[0]);
-        else
-            k = 0;
-        if(k<0.02&&k>(-0.02))
-        {
-            sline[0] = sline[0]+ROIRect.x;
-            sline[1] = sline[1]+ROIRect.y;
-            sline[2] = sline[2]+ROIRect.x;
-            sline[3] = sline[3]+ROIRect.y;
-            line_k.push_back(k);
-            line(procImage,Point(sline[0],sline[1]),Point(sline[2],sline[3]),Scalar(0,0,255),3,8,0);
-            select_vecLines.push_back(sline);
-        }
-    }
-    //lsd->drawSegments(procImage,select_vecLines);
-    return procImage;
-}
+
 void ImageProcThread::run()
 {
     while(1)

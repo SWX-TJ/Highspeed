@@ -16,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_ImageThread,SIGNAL(send_dispImage(QImage)),this,SLOT(accept_dispImage(QImage)));
     connect(m_ImageThread,SIGNAL(send_templeteImage(QImage)),this,SLOT(accept_templeteImage(QImage)));
     connect(m_ImageThread,SIGNAL(send_sendTime(QString)),this,SLOT(accept_sendTime(QString)));
-}
+    connect(m_ImageThread,SIGNAL(send_ishaveGj(bool)),this,SLOT(accept_ishaveGj(bool)));
+ }
 
 MainWindow::~MainWindow()
 {
