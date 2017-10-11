@@ -34,9 +34,23 @@ public:
     int TempleteImageNum;
     int MatchImageNum;
     int minMatchArea;
+    float max_k;
     bool isTempleteImage;
     bool isLoadTempleteImage;
     QString SpendTime;
+    Vec4f last_line;
+    Vec4f new_line;
+    Vec4f left_dx_line;
+    Vec4f right_dx_line;
+    double left_b_k;
+    double right_b_k;
+    Vec2f detect_line_param;
+    std::vector<Vec4f>left_cls_k;
+    std::vector<Vec4f>right_cls_k;
+    double px_1;
+    double py_1;
+    double px_2;
+    double py_2;
 signals:
     void send_dispImage(QImage);
     void send_sendTime(QString);
@@ -48,6 +62,7 @@ public slots:
     void accept_MatchFileInfo(QString);
     void accept_isTempleteFile(int);
 public:
+    double myabsd(double a);
     void load_templeteImage();
     Mat ImageProcess(Mat &oriImage);
     QImage convertMatToQImage(Mat &mat);
