@@ -32,7 +32,7 @@ public slots:
     void accept_sendTime(QString);
     void accept_ishaveGj(bool);
     void accept_templeteImage(QImage);
-    void send_singleLineInfo(Point);
+    void send_singleLineInfo(int,int);
     void send_secondLineInof(Point,Point);
 public:
     Point jcpoint_1;

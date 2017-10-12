@@ -4,10 +4,12 @@
 #include <QThread>
 #include <opencv.hpp>
 #include <QFileInfo>
+#include <QFile>
 #include <QCoreApplication>
 #include <QDir>
 #include <QImage>
 #include <QMessageBox>
+#include <QTextStream>
 #include <opencv2/imgproc.hpp>
 using namespace cv;
 class ImageProcThread : public QThread
@@ -42,21 +44,20 @@ public:
     Vec4f new_line;
     Vec4f left_dx_line;
     Vec4f right_dx_line;
-    double left_b_k;
-    double right_b_k;
+    Vec4f dx_last_line;
+    double detect_dx_left_k;
+    double detect_dx_left_b;
     Vec2f detect_line_param;
-    std::vector<Vec4f>left_cls_k;
-    std::vector<Vec4f>right_cls_k;
-    double px_1;
-    double py_1;
-    double px_2;
-    double py_2;
+    Point jiechu_point;
+    QFile outFile;
+    QTextStream datatext;
+    Point detect_point;
 signals:
     void send_dispImage(QImage);
     void send_sendTime(QString);
     void send_ishaveGj(bool);
     void send_templeteImage(QImage);
-    void send_singleLineInfo(Point);
+    void send_singleLineInfo(int x,int y);
     void send_secondLineInofo(Point,Point);
 public slots:
     void accept_MatchFileInfo(QString);
@@ -67,7 +68,7 @@ public:
     Mat ImageProcess(Mat &oriImage);
     QImage convertMatToQImage(Mat &mat);
     Mat RoiImageProcess(Mat &RoiImage,Rect &RoiRect);
-    Mat newLineDetect(Mat &grayImage,Mat &tempImage,Rect &RoiRect);
+    Point newLineDetect(Mat &grayImage,Mat &tempImage,Rect &RoiRect);
 protected:
     void run();
 };

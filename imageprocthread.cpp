@@ -10,19 +10,14 @@ ImageProcThread::ImageProcThread()
     last_line[1] =6.0;
     last_line[2] =80.0;
     last_line[3] =6.0;
-    left_dx_line[0] = 202;
-    left_dx_line[1] = 29;
-    left_dx_line[2] = 193;
-    left_dx_line[3] = 35;
-    right_dx_line[0] = 211;
-    right_dx_line[1] = 57;
-    right_dx_line[2] = 207;
-    right_dx_line[3] = 22;
-    px_1 = 0;
-    py_1 = 0;
-    px_2 = 0;
-    py_2 = 0;
-    max_k = 0;
+     max_k = 0;
+     outFile.setFileName("image_point.txt");
+     if(!outFile.open(QFile::WriteOnly|QFile::Truncate))
+     {
+
+     }
+
+
     load_templeteImage();
 }
 void ImageProcThread::accept_MatchFileInfo(QString filepath)
@@ -42,7 +37,7 @@ double ImageProcThread::myabsd(double a)
 {
     if(a<0)
     {
-        return -a;
+        return 0-a;
     }
     else
         return a;
@@ -81,6 +76,7 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
     Mat procImage = oriImage.clone();
     Mat grayImage;
     double tim0 = static_cast<double>(getTickCount());
+
     for(size_t i = 0;i<tempImages.size();i++)
     {
         Mat useTempImage = tempImages.at(i);
@@ -115,6 +111,7 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
         send_sendTime(send_time);
         for(size_t k = 0;k<MatchRects.size();k++)
         {
+
             Rect tempRects = MatchRects.at(k);
             if(tempRects.area() == minRectArea)
             {
@@ -122,8 +119,10 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
                 Mat grayTempImage;
                 cvtColor(tempImage,grayTempImage,COLOR_BGR2GRAY);
                 Mat ssImage = RoiImageProcess(procImage,tempRects);
-                Mat  sprocImage = newLineDetect(procImage, ssImage,tempRects);
-                imshow("lsdImage",sprocImage);
+                detect_point = newLineDetect(procImage, ssImage,tempRects);
+                line(procImage,Point(detect_point.x-20,detect_point.y),Point(detect_point.x+20,detect_point.y),Scalar(0,0,255),3,8,0);
+                line(procImage,Point(detect_point.x,detect_point.y-20),Point(detect_point.x,detect_point.y+20),Scalar(0,0,255),3,8,0);
+                send_singleLineInfo(detect_point.x,detect_point.y);
                 rectangle(procImage,tempRects,Scalar(0,255,0),2,8,0);
                 break;
             }
@@ -173,10 +172,10 @@ Mat ImageProcThread::RoiImageProcess(Mat &RoiImage,Rect &RoiRect)
     return binsobelImage;
 }
 
-Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect)
+Point ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect)
 {
     Mat procImage = grayImage.clone();
-    Mat dxprocImage = procImage(Rect(Point(128,16),Point(281,65)));
+    Mat dxprocImage = procImage(Rect(Point(0,0),Point(214,109)));
     Mat gray_dxprocImage;
     cvtColor(dxprocImage,gray_dxprocImage,COLOR_BGR2GRAY);
     Mat sobel_x;
@@ -191,79 +190,32 @@ Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect
     addWeighted(abs_sobel_x,1,abs_sobel_y,1,0,sobelImage);
     Mat binsobelImage;
     threshold(sobelImage, binsobelImage,0, 255, THRESH_OTSU);
-    imshow("sobelImage",binsobelImage);
+    std::vector<Point>pt1;
+    int nrows = binsobelImage.rows;
+    int ncols = binsobelImage.cols;
+    for(int i =0;i<nrows-2;i++)
+    {
+        for (int j = 0;j<ncols-2;j++)
+        {
+            if(j >=100)
+            {
+                if(((int)(binsobelImage.at<uchar>(i,j)) ==255)&&((int)(binsobelImage.at<uchar>(i+2,j+2)) ==255))
+                {
+                    Point temppt1;
+                    temppt1.x = j;
+                    temppt1.y = i;
+                    pt1.push_back(temppt1);
+                   break;
+                }
+            }
+        }
+    }
     Ptr<LineSegmentDetector> lsd = createLineSegmentDetector(LSD_REFINE_STD);
-    std::vector<Vec4f> dx_vecLines;
-    lsd->detect(binsobelImage,dx_vecLines);
-    left_b_k =  ( left_dx_line[3]- left_dx_line[1])/( left_dx_line[2]- left_dx_line[0]);
-    right_b_k =  ( right_dx_line[3]- right_dx_line[1])/( right_dx_line[2]- right_dx_line[0]);
-    for(size_t i = 0;i<dx_vecLines.size();i++)
-    {
-        Vec4f dx_lines = dx_vecLines[i];
-        if(dx_lines[2]>dx_lines[0])
-        {
-            float temp_x;
-            temp_x = dx_lines[2];
-            dx_lines[2] = dx_lines[0];
-            dx_lines[0] = temp_x;
-            temp_x = dx_lines[1];
-            dx_lines[1] = dx_lines[3];
-            dx_lines[3] = temp_x;
-        }
-        //qDebug()<<dx_lines[0]<<" "<<dx_lines[1]<<" "<<dx_lines[2]<<" "<<dx_lines[3]<<endl;
-        float dx_k = (dx_lines[3]-dx_lines[1])/(dx_lines[2]-dx_lines[0]);
-        double disss = sqrt(((dx_lines[3]-dx_lines[1])*(dx_lines[3]-dx_lines[1])+(dx_lines[2]-dx_lines[0])*(dx_lines[2]-dx_lines[0])));
-        dx_lines[0] = dx_lines[0]+128;
-        dx_lines[1] = dx_lines[1]+16;
-        dx_lines[2] = dx_lines[2]+128;
-        dx_lines[3] = dx_lines[3]+16;
-        if(disss>10&&disss<70)
-        {
-            double temp_dis_left_x = myabsd(dx_k-left_b_k);
-            double temp_dis_right_x = myabsd(dx_k-right_b_k);
-            if(temp_dis_left_x>temp_dis_right_x)
-            {
-                right_cls_k.push_back(dx_lines);
-            }
-            else
-            {
-                left_cls_k.push_back(dx_lines);
-            }
-        }
-    }
-    for(size_t j = 0;j<left_cls_k.size();j++)
-    {
-        Vec4f temp_line = left_cls_k[j];
-        line(dxprocImage,Point(temp_line[0],temp_line[1]),Point(temp_line[2],temp_line[3]),Scalar(0,0,255),3,8,0);
-        imshow("leisImage",dxprocImage);
-        px_1 +=temp_line[0];
-        py_1 +=temp_line[1];
-        px_2 +=temp_line[2];
-        py_2 +=temp_line[3];
-    }
-
-    if(left_cls_k.size() !=0)
-    {
-
-        px_1 = px_1/left_cls_k.size();
-        py_1 = py_1/left_cls_k.size();
-        px_2 = px_2/left_cls_k.size();
-        py_2 = py_2/left_cls_k.size();
-        left_dx_line[0] = (left_dx_line[0]+px_1)/2;
-        left_dx_line[1] = (left_dx_line[1]+py_1)/2;
-        left_dx_line[2] = (left_dx_line[2]+px_2)/2;
-        left_dx_line[3] = (left_dx_line[3]+py_2)/2;
-    }
-
-    qDebug()<<left_dx_line[0]<<" "<<left_dx_line[1]<<" "<<left_dx_line[2]<<" "<<left_dx_line[3]<<" "<<endl;
-    line(procImage,Point(left_dx_line[0],left_dx_line[1]),Point(left_dx_line[2],left_dx_line[3]),Scalar(0,0,255),3,8,0);
-    px_1 =0;
-    py_1 =0;
-    px_2 =0;
-    py_2 =0;
-    left_cls_k.clear();
-    right_cls_k.clear();
-    //imshow("leftdisImage",dxprocImage);
+    Vec4f l2_lines;
+    fitLine((Mat)pt1,l2_lines,DIST_L2,0,0.01,0.01);
+    line(dxprocImage,pt1.at(0),Point(l2_lines[2],l2_lines[3]),Scalar(0,255,0),3,8,0);
+    detect_dx_left_k = (l2_lines[3]-pt1.at(0).y)/(l2_lines[2]-pt1.at(0).x);
+    detect_dx_left_b = l2_lines[3]-detect_dx_left_k*l2_lines[2];
     std::vector<Vec4f> vecLines;
     std::vector<Vec4f> select_vecLines;
     lsd->detect(tempImage,vecLines);
@@ -327,8 +279,9 @@ Mat ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect
     else
         detect_line_param[0] = 0;
     detect_line_param[1] = new_line[1]-detect_line_param[0]*new_line[0];
-    line(procImage,Point(new_line[0],new_line[1]),Point(new_line[2],new_line[3]),Scalar(0,0,255),3,8,0);
-    return procImage;
+    jiechu_point.x = (detect_dx_left_b-detect_line_param[1])/(detect_line_param[0]-detect_dx_left_k);
+    jiechu_point.y = detect_dx_left_k*(detect_dx_left_b-detect_line_param[1])/(detect_line_param[0]-detect_dx_left_k)+detect_dx_left_b;
+    return jiechu_point;
 }
 
 
@@ -348,15 +301,18 @@ void ImageProcThread::run()
             MatchImageFileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));
             MatchImageNum = MatchImageFileInfo->count();
             int i;
+             QTextStream dataFileout(&outFile);
             for(i = 2;i<MatchImageNum;i++)
             {
                 QString filepath =  MatchImageFileInfo->at(i).filePath().replace('/',"\\");
                 std::string stdmatchfilename = filepath.toStdString();
                 OriImage = imread(stdmatchfilename);
                 resuImage = ImageProcess(OriImage);
+                dataFileout<<"The "<<(i-2)<<" Image "<<QObject::tr("Point:")<<" ("<<detect_point.x<<QObject::tr(",")<<detect_point.y<<")"<<endl;
                 dispImage = convertMatToQImage(resuImage);
                 send_dispImage(dispImage);
             }
         }
+        while(1);
     }
 }

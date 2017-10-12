@@ -237,7 +237,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>150</y>
+       <y>120</y>
        <width>101</width>
        <height>25</height>
       </rect>
@@ -256,7 +256,7 @@
      <property name="geometry">
       <rect>
        <x>130</x>
-       <y>150</y>
+       <y>120</y>
        <width>131</width>
        <height>30</height>
       </rect>
@@ -272,7 +272,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>190</y>
+       <y>170</y>
        <width>91</width>
        <height>25</height>
       </rect>
@@ -291,59 +291,8 @@
      <property name="geometry">
       <rect>
        <x>130</x>
-       <y>190</y>
+       <y>170</y>
        <width>131</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::WinPanel</enum>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_7">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>110</y>
-       <width>111</width>
-       <height>25</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <family>华文楷体</family>
-       <pointsize>14</pointsize>
-      </font>
-     </property>
-     <property name="text">
-      <string>接触点2坐标：</string>
-     </property>
-    </widget>
-    <widget class="QLabel" name="pt2_x_aix">
-     <property name="geometry">
-      <rect>
-       <x>130</x>
-       <y>110</y>
-       <width>50</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::WinPanel</enum>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-    <widget class="QLabel" name="pt2_y_aix">
-     <property name="geometry">
-      <rect>
-       <x>210</x>
-       <y>110</y>
-       <width>50</width>
        <height>30</height>
       </rect>
      </property>
