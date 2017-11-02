@@ -151,13 +151,13 @@ void HandPiecImage::on_OpenFlie_clicked()
     std::string TempleteImage = File_path.toStdString();
     OriImage = imread(TempleteImage);
     DispImage =  convertMatToQImage(OriImage);
-    ui->OriImage->setPixmap(QPixmap::fromImage(DispImage));
+    ui->OriImagellabel->setPixmap(QPixmap::fromImage(DispImage));
 }
 
 void HandPiecImage::accept_QImage(QImage oriImage)
 {
     QImage  stempDispImage = oriImage;
-    ui->OriImage->setPixmap(QPixmap::fromImage(oriImage));
+    ui->OriImagellabel->setPixmap(QPixmap::fromImage(oriImage));
 }
 
 void HandPiecImage::on_SaveFileBtn_clicked()

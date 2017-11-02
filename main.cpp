@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     if(usetime ==0)
     {
       useFile.close();
-      exit(EXIT_SUCCESS);
+    //  exit(EXIT_SUCCESS);
     }
     else
     {

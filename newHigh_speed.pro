@@ -28,17 +28,22 @@ SOURCES += \
         mainwindow.cpp \
     imageprocthread.cpp \
     handpiecimage.cpp \
-    maketempletethread.cpp
+    maketempletethread.cpp \
+    autopieceimage.cpp \
+    autotemplete.cpp
 
 HEADERS += \
         mainwindow.h \
     imageprocthread.h \
     handpiecimage.h \
-    maketempletethread.h
+    maketempletethread.h \
+    autopieceimage.h \
+    autotemplete.h
 
 FORMS += \
         mainwindow.ui \
-    handpiecimage.ui
+    handpiecimage.ui \
+    autopieceimage.ui
 
 INCLUDEPATH += F:/opencvmingw/include
 INCLUDEPATH += F:/opencvmingw/include/opencv

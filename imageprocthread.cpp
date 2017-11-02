@@ -1,7 +1,7 @@
 #include "imageprocthread.h"
-#include <QDebug>
 #include <iostream>
 #include <math.h>
+#include <QDebug>
 ImageProcThread::ImageProcThread()
 {
     isTempleteImage = false;
@@ -10,12 +10,13 @@ ImageProcThread::ImageProcThread()
     last_line[1] =6.0;
     last_line[2] =80.0;
     last_line[3] =6.0;
-     max_k = 0;
-     outFile.setFileName("image_point.txt");
-     if(!outFile.open(QFile::WriteOnly|QFile::Truncate))
-     {
+    max_k = 0;
+    label = 0;
+    outFile.setFileName("image_point.txt");
+    if(!outFile.open(QFile::WriteOnly|QFile::Truncate))
+    {
 
-     }
+    }
 
 
     load_templeteImage();
@@ -33,6 +34,8 @@ void ImageProcThread::accept_isTempleteFile(int tem)
     }
 }
 
+
+
 double ImageProcThread::myabsd(double a)
 {
     if(a<0)
@@ -43,6 +46,22 @@ double ImageProcThread::myabsd(double a)
         return a;
 }
 
+Vec4f ImageProcThread::coordiExchanged(Vec4f &pts)
+{
+    if(pts[2]>pts[0])
+    {
+        float temp_x;
+        temp_x = pts[2];
+        pts[2] = pts[0];
+        pts[0] = temp_x;
+        temp_x = pts[1];
+        pts[1] = pts[3];
+        pts[3] = temp_x;
+    }
+    return pts;
+}
+
+
 void ImageProcThread::load_templeteImage()
 {
     QString templeteImagepath = QCoreApplication::applicationDirPath()+QString("/templete");
@@ -52,7 +71,7 @@ void ImageProcThread::load_templeteImage()
     TempleteImageNum = TempleteImageFileInfo->count();
     if(TempleteImageNum==2)
     {
-        QMessageBox::information(NULL,"Erroe","there is no TempleteImage!");
+        QMessageBox::information(NULL,"Error","there is no TempleteImage!");
         isTempleteImage = false;
         isLoadTempleteImage = false;
     }
@@ -131,6 +150,7 @@ Mat ImageProcThread::ImageProcess(Mat &oriImage)
 
     return procImage;
 }
+
 QImage ImageProcThread::convertMatToQImage(Mat &mat)
 {
     QImage img;
@@ -150,6 +170,7 @@ QImage ImageProcThread::convertMatToQImage(Mat &mat)
     }
     return img;
 }
+
 
 Mat ImageProcThread::RoiImageProcess(Mat &RoiImage,Rect &RoiRect)
 {
@@ -172,53 +193,14 @@ Mat ImageProcThread::RoiImageProcess(Mat &RoiImage,Rect &RoiRect)
     return binsobelImage;
 }
 
-Point ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect)
+Vec2d ImageProcThread::pantographLineDetect(Mat &proImage,Rect &RoiRect)
 {
-    Mat procImage = grayImage.clone();
-    Mat dxprocImage = procImage(Rect(Point(0,0),Point(214,109)));
-    Mat gray_dxprocImage;
-    cvtColor(dxprocImage,gray_dxprocImage,COLOR_BGR2GRAY);
-    Mat sobel_x;
-    Sobel(gray_dxprocImage,sobel_x,gray_dxprocImage.depth(),1,0,3);
-    Mat abs_sobel_x;
-    convertScaleAbs(sobel_x,abs_sobel_x);
-    Mat sobel_y;
-    Sobel(gray_dxprocImage, sobel_y,gray_dxprocImage.depth(), 0, 1, 3);
-    Mat abs_sobel_y;
-    convertScaleAbs(sobel_y, abs_sobel_y);
-    Mat sobelImage;
-    addWeighted(abs_sobel_x,1,abs_sobel_y,1,0,sobelImage);
-    Mat binsobelImage;
-    threshold(sobelImage, binsobelImage,0, 255, THRESH_OTSU);
-    std::vector<Point>pt1;
-    int nrows = binsobelImage.rows;
-    int ncols = binsobelImage.cols;
-    for(int i =0;i<nrows-2;i++)
-    {
-        for (int j = 0;j<ncols-2;j++)
-        {
-            if(j >=100)
-            {
-                if(((int)(binsobelImage.at<uchar>(i,j)) ==255)&&((int)(binsobelImage.at<uchar>(i+2,j+2)) ==255))
-                {
-                    Point temppt1;
-                    temppt1.x = j;
-                    temppt1.y = i;
-                    pt1.push_back(temppt1);
-                   break;
-                }
-            }
-        }
-    }
+    Mat procImage = proImage.clone();
+    Vec2d final_pantograhLine_info;
     Ptr<LineSegmentDetector> lsd = createLineSegmentDetector(LSD_REFINE_STD);
-    Vec4f l2_lines;
-    fitLine((Mat)pt1,l2_lines,DIST_L2,0,0.01,0.01);
-    line(dxprocImage,pt1.at(0),Point(l2_lines[2],l2_lines[3]),Scalar(0,255,0),3,8,0);
-    detect_dx_left_k = (l2_lines[3]-pt1.at(0).y)/(l2_lines[2]-pt1.at(0).x);
-    detect_dx_left_b = l2_lines[3]-detect_dx_left_k*l2_lines[2];
     std::vector<Vec4f> vecLines;
     std::vector<Vec4f> select_vecLines;
-    lsd->detect(tempImage,vecLines);
+    lsd->detect(procImage,vecLines);
     if(vecLines.size()!=0)
         send_ishaveGj(true);
     for(size_t  i = 0;i<vecLines.size();i++)
@@ -244,16 +226,7 @@ Point ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRe
                     {
                         if(dists>30&&dists<70)
                         {
-                            if(sline[2]>sline[0])
-                            {
-                                float temp_x;
-                                temp_x = sline[2];
-                                sline[2] = sline[0];
-                                sline[0] = temp_x;
-                                temp_x = sline[1];
-                                sline[1] = sline[3];
-                                sline[3] = temp_x;
-                            }
+                            sline = coordiExchanged(sline);
                             sline[0] = (last_line[0]+sline[0])/2;
                             sline[1] = (last_line[1]+sline[1])/2;
                             sline[2] = (last_line[2]+sline[2])/2;
@@ -275,14 +248,282 @@ Point ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRe
     new_line[2] =  last_line[2]+RoiRect.x;
     new_line[3] =  last_line[3]+RoiRect.y;
     if(( new_line[2]- new_line[0])!= 0)
-        detect_line_param[0] = ( new_line[3]- new_line[1])/( new_line[2]- new_line[0]);
+        final_pantograhLine_info[0] = ( new_line[3]- new_line[1])/( new_line[2]- new_line[0]);
     else
-        detect_line_param[0] = 0;
-    detect_line_param[1] = new_line[1]-detect_line_param[0]*new_line[0];
-    jiechu_point.x = (detect_dx_left_b-detect_line_param[1])/(detect_line_param[0]-detect_dx_left_k);
-    jiechu_point.y = detect_dx_left_k*(detect_dx_left_b-detect_line_param[1])/(detect_line_param[0]-detect_dx_left_k)+detect_dx_left_b;
-    return jiechu_point;
+        final_pantograhLine_info[0] = 0;
+    final_pantograhLine_info[1] = new_line[1]-final_pantograhLine_info[0]*new_line[0];
+    return final_pantograhLine_info;
 }
+
+Vec2d ImageProcThread::pantographDetect(Mat &proImage)
+{
+    Mat procImage = proImage.clone();
+    Vec4f l2_lines;
+    Vec2d final_pantograph_info;
+    Mat dxprocImage = procImage(Rect(Point(0,0),Point(300,100)));
+    Mat gray_dxprocImage;
+    cvtColor(dxprocImage,gray_dxprocImage,COLOR_BGR2GRAY);
+    Mat sobel_x;
+    Sobel(gray_dxprocImage,sobel_x,gray_dxprocImage.depth(),1,0,3);
+    Mat abs_sobel_x;
+    convertScaleAbs(sobel_x,abs_sobel_x);
+    Mat sobel_y;
+    Sobel(gray_dxprocImage, sobel_y,gray_dxprocImage.depth(), 0, 1, 3);
+    Mat abs_sobel_y;
+    convertScaleAbs(sobel_y, abs_sobel_y);
+    Mat sobelImage;
+    addWeighted(abs_sobel_x,1,abs_sobel_y,1,0,sobelImage);
+    Mat binsobelImage;
+    threshold(sobelImage, binsobelImage,0, 255, THRESH_OTSU);
+    imshow("binsobel",binsobelImage);
+    std::vector<Point>pt1;
+    int nrows = binsobelImage.rows;
+    int ncols = binsobelImage.cols;
+    for(int i =0;i<nrows-2;i++)
+    {
+        for (int j = 0;j<ncols-2;j++)
+        {
+            if(j >=100)
+            {
+                if(((int)(binsobelImage.at<uchar>(i,j)) ==255)&&((int)(binsobelImage.at<uchar>(i+2,j+2)) ==255))
+                {
+                    Point temppt1;
+                    temppt1.x = j;
+                    temppt1.y = i;
+                    pt1.push_back(temppt1);
+                    break;
+                }
+            }
+        }
+    }
+    fitLine((Mat)pt1,l2_lines,DIST_L2,0,0.01,0.01);
+    line(procImage,pt1.at(0),Point(l2_lines[2],l2_lines[3]),Scalar(0,255,0),1,8);
+    imshow("line_proc",procImage);
+    final_pantograph_info[0] = (l2_lines[3]-pt1.at(0).y)/(l2_lines[2]-pt1.at(0).x);
+    final_pantograph_info[1] = l2_lines[3]-final_pantograph_info[0]*l2_lines[2];
+    return final_pantograph_info;
+}
+
+
+Point ImageProcThread::newLineDetect(Mat &grayImage, Mat &tempImage, Rect &RoiRect)
+{
+    Point cacu_final_point;
+    detect_pantgraph_line_info  = pantographDetect(grayImage);
+    detect_pantgraph_info       = pantographLineDetect(tempImage,RoiRect);
+    cacu_final_point.x = (detect_pantgraph_line_info[1]-detect_pantgraph_info[1])/(detect_pantgraph_info[0]- detect_pantgraph_line_info[0]);
+    cacu_final_point.y = detect_pantgraph_line_info[0]*(detect_pantgraph_line_info[1]-detect_pantgraph_info[1])/(detect_pantgraph_info[0]-detect_pantgraph_line_info[0])+detect_pantgraph_line_info[1];
+    return  cacu_final_point;
+}
+
+Vec2d ImageProcThread::m_nLineDetect(Mat &procImage)
+{
+    Mat proceImage = procImage.clone();
+    Mat grayImage;
+    cvtColor(proceImage,grayImage,COLOR_BGR2GRAY);
+    Mat sstestImage = Check(grayImage);
+    Mat binImage;
+    threshold(sstestImage,binImage,180,255,THRESH_BINARY);
+    std::vector<Point>pt1;
+    Vec4f l2_lines;
+    for(int i = 0;i<binImage.cols;i++)
+    {
+        for(int j = 0;j<binImage.rows;j++)
+        {
+            if(i>150&&i<260)
+            {
+                if(binImage.at<uchar>(j,i) ==255)
+                {
+                    Point temppt1;
+                    temppt1.x = i;
+                    temppt1.y = j;
+                    pt1.push_back(temppt1);
+                    break;
+                }
+            }
+        }
+    }
+    fitLine((Mat)pt1,l2_lines,DIST_L2,0,0.01,0.01);
+    line(proceImage,pt1.at(1),Point(l2_lines[2],l2_lines[3]),Scalar(0,255,0),3,8);
+    Vec2d line_info;
+    line_info[0] = (l2_lines[3]-pt1.at(1).y)/(l2_lines[2]-pt1.at(1).x);
+    line_info[1] = l2_lines[3]-line_info[0]*l2_lines[2];
+   // qDebug()<<"k"<<line_info[0]<<endl;
+    imshow("line_proc",proceImage);
+    waitKey(30);
+    return line_info;
+}
+
+Vec2d ImageProcThread::m_npantLineDetect(Mat &procImage)
+{
+    Mat procesImage = procImage.clone();
+    Mat ROIImage = procesImage(Rect(100,0,250,50));
+    imshow("ROiImage",ROIImage);
+    Mat grayImage;
+    cvtColor(ROIImage,grayImage,COLOR_BGR2GRAY);
+   // imshow("grayImage",grayImage);
+    Mat binroiImage;
+    doubleThreshhold(grayImage,binroiImage,100,255);
+    imshow("binroiImage",binroiImage);
+    //int opt_rows = getOptimalDFTSize(grayImage.rows);
+   // int opt_cols = getOptimalDFTSize(grayImage.cols);
+    //qDebug()<<"rows"<<grayImage.rows<<" "<<"cols"<<grayImage.cols<<endl;
+    //qDebug()<<"opt_rows"<<opt_rows<<" "<<"opt_cols"<<opt_cols<<endl;
+   // Mat distii;
+   // copyMakeBorder(grayImage,distii,0,opt_rows-grayImage.rows,0,opt_cols-grayImage.cols,BORDER_CONSTANT,Scalar::all(0));
+       int UpValue = 250;
+            int DownValue = 130;
+            for (int i = 0; i < grayImage.rows-1; i++)
+            {
+                for (int j = 0; j < grayImage.cols-1; j++)
+                {
+                    if ((grayImage.at<uchar>(i, j) > DownValue&&grayImage.at<uchar>(i, j) < UpValue)&&((grayImage.at<uchar>(i+1, j+1) > DownValue&&grayImage.at<uchar>(i+1, j+1) < UpValue)|| (grayImage.at<uchar>(i, j+1) > DownValue&&grayImage.at<uchar>(i, j+1) < UpValue)))
+                    {
+                        grayImage.at<uchar>(i, j) = 255;
+                        grayImage.at<uchar>(i+1,j+1) = 255;
+                        grayImage.at<uchar>(i,j+1) = 255;
+                    }
+                }
+            }
+    imshow("dotImage",grayImage);
+    Mat fliterImage;
+    threshold(grayImage,fliterImage,250,255,THRESH_BINARY);
+    imshow("fliterImage",fliterImage);
+    //Mat dstImage;
+//      /  filter2D(grayImage,dstImage,grayImage.depth(),kern);
+      //  imshow("dstImage",dstImage);
+   // eight_neborhood(binroiImage);
+    waitKey(30);
+}
+
+Mat ImageProcThread::doubleThreshhold(Mat &InputImage, Mat &OutImage, int minValue, int maxValue)
+{
+    OutImage = InputImage.clone();
+    for(int i =0;i<OutImage.rows;i++)
+    {
+        for(int j  = 0;j<OutImage.cols;j++)
+        {
+            if(((OutImage.at<uchar>(i,j)>minValue))&&(OutImage.at<uchar>(i,j)<maxValue))
+            {
+                OutImage.at<uchar>(i,j) = 255;
+            }
+            else
+            {
+                OutImage.at<uchar>(i,j) = 0;
+            }
+        }
+    }
+    return OutImage;
+}
+
+void ImageProcThread::eight_neborhood(Mat &InputImage)
+{
+    Mat labelImage = Mat::zeros(InputImage.rows,InputImage.cols,CV_8UC1);
+    for(int i  = 0;i<InputImage.rows-1;i++)
+    {
+        for(int j = 0;j<InputImage.cols-1;j++)
+        {
+            if(InputImage.at<uchar>(i,j) ==255)
+            {
+                if((InputImage.at<uchar>(i,j+1)==255))
+                {
+                    Nerborhood_Point_Info[0] = i;
+                    Nerborhood_Point_Info[1] = j+1;
+                    Nerborhood_Point_Info[2] = label;
+                    label = label;
+                    for(size_t d = 0;d<N_Point_infos.size();d++)
+                    {
+                        if(N_Point_infos.at(d)[0] ==  Nerborhood_Point_Info[0]&&N_Point_infos.at(d)[1] ==  Nerborhood_Point_Info[1])
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            N_Point_infos.push_back(Nerborhood_Point_Info);
+                            break;
+                        }
+                    }
+
+                    Nerborhood_Point_Info[0] = i;
+                    Nerborhood_Point_Info[1] = j;
+                    Nerborhood_Point_Info[2] = label;
+                    label = label;
+                    for(size_t d = 0;d<N_Point_infos.size();d++)
+                    {
+                        if(N_Point_infos.at(d)[0] ==  Nerborhood_Point_Info[0]&&N_Point_infos.at(d)[1] ==  Nerborhood_Point_Info[1])
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            N_Point_infos.push_back(Nerborhood_Point_Info);
+                            break;
+                        }
+                    }
+
+                }
+                else if((InputImage.at<uchar>(i+1,j+1)==255))
+                {
+                    Nerborhood_Point_Info[0] = i+1;
+                    Nerborhood_Point_Info[1] = j+1;
+                    Nerborhood_Point_Info[2] = label;
+                    label = label;
+                    for(size_t d = 0;d<N_Point_infos.size();d++)
+                    {
+                        if(N_Point_infos.at(d)[0] ==  Nerborhood_Point_Info[0]&&N_Point_infos.at(d)[1] ==  Nerborhood_Point_Info[1])
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            N_Point_infos.push_back(Nerborhood_Point_Info);
+                            break;
+                        }
+                    }
+                    Nerborhood_Point_Info[0] = i;
+                    Nerborhood_Point_Info[1] = j;
+                    Nerborhood_Point_Info[2] = label;
+                    label = label;
+                    for(size_t d = 0;d<N_Point_infos.size();d++)
+                    {
+                        if(N_Point_infos.at(d)[0] ==  Nerborhood_Point_Info[0]&&N_Point_infos.at(d)[1] ==  Nerborhood_Point_Info[1])
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            N_Point_infos.push_back(Nerborhood_Point_Info);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    label =  label+1;
+                    Nerborhood_Point_Info[0] = i;
+                    Nerborhood_Point_Info[1] = j;
+                    Nerborhood_Point_Info[2] = label;
+                    N_Point_infos.push_back(Nerborhood_Point_Info);
+                }
+            }
+        }
+    }
+    label = 0;
+
+
+    for(size_t t = 0;t<N_Point_infos.size();t++)
+    {
+        if(N_Point_infos.at(t)[2]>50&&N_Point_infos.at(t)[2]<90)
+        {
+            labelImage.at<uchar>(N_Point_infos.at(t)[0],N_Point_infos.at(t)[1]) =255;
+        }
+        //qDebug()<<"Label "<<N_Point_infos.at(t)[2]<<endl;
+    }
+    N_Point_infos.clear();
+    imshow("labelImage",labelImage);
+
+}
+
+
 
 
 void ImageProcThread::run()
@@ -300,17 +541,18 @@ void ImageProcThread::run()
             QStringList filter;
             MatchImageFileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));
             MatchImageNum = MatchImageFileInfo->count();
-            int i;
-             QTextStream dataFileout(&outFile);
-            for(i = 2;i<MatchImageNum;i++)
+            QString filepath = MatchImageFilePath.replace('/',"\\");
+            for(int i = 19;i<MatchImageNum-2;i++)
             {
-                QString filepath =  MatchImageFileInfo->at(i).filePath().replace('/',"\\");
-                std::string stdmatchfilename = filepath.toStdString();
+                // qDebug()<<"Image:"<<i<<endl;
+                QString filename = filepath+QString("\\1 (%1).bmp").arg(i);
+                std::string stdmatchfilename = filename.toStdString();
                 OriImage = imread(stdmatchfilename);
-                resuImage = ImageProcess(OriImage);
-                dataFileout<<"The "<<(i-2)<<" Image "<<QObject::tr("Point:")<<" ("<<detect_point.x<<QObject::tr(",")<<detect_point.y<<")"<<endl;
-                dispImage = convertMatToQImage(resuImage);
-                send_dispImage(dispImage);
+                detect_pantgraph_info = m_nLineDetect(OriImage);
+                m_npantLineDetect(OriImage);
+                // Mat proccImage = ImageProcess(OriImage);
+                // dispImage = convertMatToQImage(proccImage);
+                //send_dispImage(dispImage);
             }
         }
         while(1);

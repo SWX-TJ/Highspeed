@@ -8,6 +8,7 @@
 #include <QList>
 #include "handpiecimage.h"
 #include "imageprocthread.h"
+#include "autopieceimage.h"
 using namespace cv;
 namespace Ui {
 class MainWindow;
@@ -25,6 +26,7 @@ private slots:
     void on_StartprocessBtn_clicked();
     void on_ExitBtn_clicked();
     void on_Hand_Templete_triggered();
+    void on_actionAuto_Templete_triggered();
 public slots:
     void accept_return_signal(int);
     void accept_newtempleteFile(int);
@@ -45,6 +47,7 @@ signals:
 public:
     HandPiecImage *m_handpiec;
     ImageProcThread *m_ImageThread;
+    autoPieceImage *m_autoimage;
     QString MatchImageFilePath;
     QList<QFileInfo> *MatchImageFileInfo;
     int MatchImageNum;
