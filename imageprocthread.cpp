@@ -347,7 +347,7 @@ Vec2d ImageProcThread::m_nLineDetect(Mat &procImage)
     Vec2d line_info;
     line_info[0] = (l2_lines[3]-pt1.at(1).y)/(l2_lines[2]-pt1.at(1).x);
     line_info[1] = l2_lines[3]-line_info[0]*l2_lines[2];
-   // qDebug()<<"k"<<line_info[0]<<endl;
+    // qDebug()<<"k"<<line_info[0]<<endl;
     imshow("line_proc",proceImage);
     waitKey(30);
     return line_info;
@@ -357,41 +357,69 @@ Vec2d ImageProcThread::m_npantLineDetect(Mat &procImage)
 {
     Mat procesImage = procImage.clone();
     Mat ROIImage = procesImage(Rect(100,0,250,50));
-    imshow("ROiImage",ROIImage);
     Mat grayImage;
     cvtColor(ROIImage,grayImage,COLOR_BGR2GRAY);
-   // imshow("grayImage",grayImage);
-    Mat binroiImage;
-    doubleThreshhold(grayImage,binroiImage,100,255);
-    imshow("binroiImage",binroiImage);
-    //int opt_rows = getOptimalDFTSize(grayImage.rows);
-   // int opt_cols = getOptimalDFTSize(grayImage.cols);
-    //qDebug()<<"rows"<<grayImage.rows<<" "<<"cols"<<grayImage.cols<<endl;
-    //qDebug()<<"opt_rows"<<opt_rows<<" "<<"opt_cols"<<opt_cols<<endl;
-   // Mat distii;
-   // copyMakeBorder(grayImage,distii,0,opt_rows-grayImage.rows,0,opt_cols-grayImage.cols,BORDER_CONSTANT,Scalar::all(0));
-       int UpValue = 250;
-            int DownValue = 130;
-            for (int i = 0; i < grayImage.rows-1; i++)
+    Mat sobel_x;
+    Sobel(grayImage,sobel_x,grayImage.depth(),1,0,3);
+    Mat abs_sobel_x;
+    convertScaleAbs(sobel_x,abs_sobel_x);
+    Mat sobel_y;
+    Sobel(grayImage, sobel_y,grayImage.depth(), 0, 1, 3);
+    Mat abs_sobel_y;
+    convertScaleAbs(sobel_y, abs_sobel_y);
+    Mat sobelImage;
+    addWeighted(abs_sobel_x,0.5,abs_sobel_y,0.5,0,sobelImage);
+    imshow("sobelImage",sobelImage);
+    Mat binsobelImage;
+    threshold(sobelImage,binsobelImage,120,255,THRESH_BINARY);
+    imshow("binsobel",binsobelImage);
+    Ptr<LineSegmentDetector> lsd = createLineSegmentDetector(LSD_REFINE_STD);
+    std::vector<Vec4f> vecLines;
+    lsd->detect(binsobelImage,vecLines);
+    std::vector<Vec4f>std_lines;
+    for(size_t i = 0;i<vecLines.size();i++)
+    {
+        Vec4f temp_lines = vecLines[i];
+        if((temp_lines[3]-temp_lines[1])*(temp_lines[3]-temp_lines[1])>40)
+        {
+            if(temp_lines[1]<10)
             {
-                for (int j = 0; j < grayImage.cols-1; j++)
-                {
-                    if ((grayImage.at<uchar>(i, j) > DownValue&&grayImage.at<uchar>(i, j) < UpValue)&&((grayImage.at<uchar>(i+1, j+1) > DownValue&&grayImage.at<uchar>(i+1, j+1) < UpValue)|| (grayImage.at<uchar>(i, j+1) > DownValue&&grayImage.at<uchar>(i, j+1) < UpValue)))
-                    {
-                        grayImage.at<uchar>(i, j) = 255;
-                        grayImage.at<uchar>(i+1,j+1) = 255;
-                        grayImage.at<uchar>(i,j+1) = 255;
-                    }
-                }
+                line( procesImage,Point(temp_lines[0]-5+100,temp_lines[1]),Point(temp_lines[0]+5+100,temp_lines[1]),Scalar(100,255,0),3,8,0);
+                line( procesImage,Point(temp_lines[0]+100,temp_lines[1]-5),Point(temp_lines[0]+100,temp_lines[1]+5),Scalar(100,255,0),3,8,0);
+                temp_lines[0] =  temp_lines[0]+100;
+                temp_lines[2] = temp_lines[2]+100;
+                //line(procesImage,Point(temp_lines[0],temp_lines[1]),Point(temp_lines[2],temp_lines[3]),Scalar(0,0,255),3,8,0);
+                std_lines.push_back(temp_lines);
             }
-    imshow("dotImage",grayImage);
-    Mat fliterImage;
-    threshold(grayImage,fliterImage,250,255,THRESH_BINARY);
-    imshow("fliterImage",fliterImage);
-    //Mat dstImage;
-//      /  filter2D(grayImage,dstImage,grayImage.depth(),kern);
-      //  imshow("dstImage",dstImage);
-   // eight_neborhood(binroiImage);
+        }
+    }
+
+    if(std_lines.size() ==0)
+    {
+        qDebug()<<"std_size is zero"<<endl;
+    }
+    else
+    {
+        float min_lines_x = std_lines.at(0)[0];
+        for(size_t i = 0;i<std_lines.size();i++)
+        {
+            if(std_lines.at(i)[0]<=min_lines_x)
+            {
+                min_lines_x = std_lines.at(i)[0];
+            }
+        }
+        for(size_t i = 0;i<std_lines.size();i++)
+        {
+            if(std_lines.at(i)[0]==min_lines_x)
+            {
+                line(procesImage,Point( std_lines.at(i)[0],std_lines.at(i)[1]),Point(std_lines.at(i)[2],std_lines.at(i)[3]),Scalar(0,0,255),3,8,0);
+            }
+        }
+        qDebug()<<"std_size is: "<<std_lines.size()<<endl;
+
+    }
+    //lsd->drawSegments( procesImage,std_lines);
+    imshow("ROIimage", procesImage);
     waitKey(30);
 }
 
@@ -508,8 +536,6 @@ void ImageProcThread::eight_neborhood(Mat &InputImage)
         }
     }
     label = 0;
-
-
     for(size_t t = 0;t<N_Point_infos.size();t++)
     {
         if(N_Point_infos.at(t)[2]>50&&N_Point_infos.at(t)[2]<90)
